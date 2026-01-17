@@ -16,7 +16,15 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
-    "test:e2e": "vitest run --include **/*.e2e-spec.ts"
+    "test:e2e": "vitest run --include **/*.e2e-spec.ts",
+    "docker": "docker compose -f docker/compose.base.yaml -f docker/compose.prd.yaml up -d",
+    "docker:down": "docker compose -f docker/compose.base.yaml -f docker/compose.prd.yaml down",
+    "docker:build": "docker compose -f docker/compose.base.yaml -f docker/compose.prd.yaml build",
+    "docker:stg": "docker compose -f docker/compose.base.yaml -f docker/compose.stg.yaml --env-file .env.stg up -d",
+    "docker:stg:down": "docker compose -f docker/compose.base.yaml -f docker/compose.stg.yaml down",
+    "docker:stg:build": "docker compose -f docker/compose.base.yaml -f docker/compose.stg.yaml --env-file .env.stg build",
+    "docker:dev": "docker compose -f .devcontainer/compose.yaml up -d",
+    "docker:dev:down": "docker compose -f .devcontainer/compose.yaml down"
   },
   "dependencies": {
     "@fastify/static": "^9.0.0",

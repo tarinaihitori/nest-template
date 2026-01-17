@@ -6,8 +6,10 @@ services:
     volumes:
       - ..:/workspace:cached
     command: sleep infinity
+    env_file:
+      - ../.env
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/helpline
+      NODE_ENV: development
 
   db:
     image: postgres:17.4
@@ -16,10 +18,8 @@ services:
       - '0.0.0.0:5432:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: helpline
+    env_file:
+      - ../.env
 
 volumes:
   postgres-data:
