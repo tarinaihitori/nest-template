@@ -12,7 +12,7 @@ export interface ErrorResponse {
   path: string;
   method: string;
   message: string;
-  errorCode: ErrorCode | string;
+  errorCode: ErrorCode;
   errors?: ValidationErrorDetail[];
   stack?: string;
 }

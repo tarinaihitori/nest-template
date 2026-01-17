@@ -10,7 +10,9 @@ describe('JwtVerificationService', () => {
   let service: JwtVerificationService;
   let configService: ConfigService;
 
-  const createMockConfigService = (config: Record<string, string | undefined>) => {
+  const createMockConfigService = (
+    config: Record<string, string | undefined>,
+  ) => {
     return {
       get: vi.fn((key: string) => config[key]),
     } as unknown as ConfigService;
@@ -48,7 +50,9 @@ describe('JwtVerificationService', () => {
         await service.verify(token);
       } catch (error) {
         expect(error).toBeInstanceOf(BusinessException);
-        expect((error as BusinessException).getErrorCode()).toBe(ErrorCodes.TOKEN_EXPIRED);
+        expect((error as BusinessException).getErrorCode()).toBe(
+          ErrorCodes.TOKEN_EXPIRED,
+        );
       }
     });
 
@@ -62,18 +66,24 @@ describe('JwtVerificationService', () => {
         await service.verify(token);
       } catch (error) {
         expect(error).toBeInstanceOf(BusinessException);
-        expect((error as BusinessException).getErrorCode()).toBe(ErrorCodes.TOKEN_INVALID);
+        expect((error as BusinessException).getErrorCode()).toBe(
+          ErrorCodes.TOKEN_INVALID,
+        );
       }
     });
 
     it('should throw TOKEN_INVALID for malformed tokens', async () => {
-      await expect(service.verify('malformed-token')).rejects.toThrow(BusinessException);
+      await expect(service.verify('malformed-token')).rejects.toThrow(
+        BusinessException,
+      );
 
       try {
         await service.verify('malformed-token');
       } catch (error) {
         expect(error).toBeInstanceOf(BusinessException);
-        expect((error as BusinessException).getErrorCode()).toBe(ErrorCodes.TOKEN_INVALID);
+        expect((error as BusinessException).getErrorCode()).toBe(
+          ErrorCodes.TOKEN_INVALID,
+        );
       }
     });
   });

@@ -173,7 +173,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
     };
 
     if (errorResponse.statusCode >= 500) {
-      this.logger.error({ ...logContext, err: exception }, errorResponse.message);
+      this.logger.error(
+        { ...logContext, err: exception },
+        errorResponse.message,
+      );
     } else {
       this.logger.warn(logContext, errorResponse.message);
     }

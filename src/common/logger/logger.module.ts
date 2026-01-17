@@ -8,22 +8,32 @@ import { randomUUID } from 'crypto';
     PinoLoggerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const isProduction = configService.get('NODE_ENV') === 'production';
+        const isProduction =
+          configService.get<string>('NODE_ENV') === 'production';
         const logLevel =
-          configService.get('LOG_LEVEL') || (isProduction ? 'info' : 'debug');
+          configService.get<string>('LOG_LEVEL') ||
+          (isProduction ? 'info' : 'debug');
 
         return {
           pinoHttp: {
             level: logLevel,
-            genReqId: (req) =>
+            genReqId: (req: { headers: Record<string, string | undefined> }) =>
               (req.headers['x-correlation-id'] as string) || randomUUID(),
-            customLogLevel: (_req, res, err) => {
+            customLogLevel: (
+              _req: unknown,
+              res: { statusCode: number },
+              err: Error | undefined,
+            ) => {
               if (res.statusCode >= 500 || err) return 'error';
               if (res.statusCode >= 400) return 'warn';
               return 'info';
             },
             serializers: {
-              req: (req) => ({
+              req: (req: {
+                method: string;
+                url: string;
+                headers: Record<string, string | undefined>;
+              }) => ({
                 method: req.method,
                 url: req.url,
                 headers: {
@@ -31,7 +41,9 @@ import { randomUUID } from 'crypto';
                   'user-agent': req.headers['user-agent'],
                 },
               }),
-              res: (res) => ({ statusCode: res.statusCode }),
+              res: (res: { statusCode: number }) => ({
+                statusCode: res.statusCode,
+              }),
             },
             redact: ['req.headers.authorization', 'req.headers.cookie'],
             transport: isProduction
@@ -45,7 +57,8 @@ import { randomUUID } from 'crypto';
                   },
                 },
             base: {
-              service: configService.get('SERVICE_NAME') || 'nest-project',
+              service:
+                configService.get<string>('SERVICE_NAME') || 'nest-project',
             },
           },
         };

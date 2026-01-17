@@ -16,7 +16,6 @@ describe('JwtAuthGuard', () => {
 
   const createMockExecutionContext = (
     headers: Record<string, string> = {},
-    isPublic = false,
   ): ExecutionContext => {
     const request = {
       headers,
@@ -74,13 +73,17 @@ describe('JwtAuthGuard', () => {
     it('should throw TOKEN_MISSING when no authorization header', async () => {
       const context = createMockExecutionContext({});
 
-      await expect(guard.canActivate(context)).rejects.toThrow(BusinessException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        BusinessException,
+      );
 
       try {
         await guard.canActivate(context);
       } catch (error) {
         expect(error).toBeInstanceOf(BusinessException);
-        expect((error as BusinessException).getErrorCode()).toBe(ErrorCodes.TOKEN_MISSING);
+        expect((error as BusinessException).getErrorCode()).toBe(
+          ErrorCodes.TOKEN_MISSING,
+        );
       }
     });
 
@@ -89,13 +92,17 @@ describe('JwtAuthGuard', () => {
         authorization: 'Basic some-credentials',
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrow(BusinessException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        BusinessException,
+      );
 
       try {
         await guard.canActivate(context);
       } catch (error) {
         expect(error).toBeInstanceOf(BusinessException);
-        expect((error as BusinessException).getErrorCode()).toBe(ErrorCodes.TOKEN_MISSING);
+        expect((error as BusinessException).getErrorCode()).toBe(
+          ErrorCodes.TOKEN_MISSING,
+        );
       }
     });
 
@@ -104,18 +111,25 @@ describe('JwtAuthGuard', () => {
         authorization: 'Bearer ',
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrow(BusinessException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        BusinessException,
+      );
 
       try {
         await guard.canActivate(context);
       } catch (error) {
         expect(error).toBeInstanceOf(BusinessException);
-        expect((error as BusinessException).getErrorCode()).toBe(ErrorCodes.TOKEN_MISSING);
+        expect((error as BusinessException).getErrorCode()).toBe(
+          ErrorCodes.TOKEN_MISSING,
+        );
       }
     });
 
     it('should verify valid token and attach user to request', async () => {
-      const mockPayload: JwtPayload = { sub: 'user-123', email: 'test@example.com' };
+      const mockPayload: JwtPayload = {
+        sub: 'user-123',
+        email: 'test@example.com',
+      };
       vi.mocked(jwtVerificationService.verify).mockResolvedValue(mockPayload);
 
       const context = createMockExecutionContext({
@@ -145,7 +159,9 @@ describe('JwtAuthGuard', () => {
     });
 
     it('should wrap unexpected errors as TOKEN_INVALID', async () => {
-      vi.mocked(jwtVerificationService.verify).mockRejectedValue(new Error('Unexpected error'));
+      vi.mocked(jwtVerificationService.verify).mockRejectedValue(
+        new Error('Unexpected error'),
+      );
 
       const context = createMockExecutionContext({
         authorization: 'Bearer bad-token',
@@ -155,7 +171,9 @@ describe('JwtAuthGuard', () => {
         await guard.canActivate(context);
       } catch (error) {
         expect(error).toBeInstanceOf(BusinessException);
-        expect((error as BusinessException).getErrorCode()).toBe(ErrorCodes.TOKEN_INVALID);
+        expect((error as BusinessException).getErrorCode()).toBe(
+          ErrorCodes.TOKEN_INVALID,
+        );
       }
     });
   });

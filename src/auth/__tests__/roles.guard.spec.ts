@@ -74,13 +74,21 @@ describe('RolesGuard', () => {
         guard.canActivate(context);
       } catch (error) {
         expect(error).toBeInstanceOf(BusinessException);
-        expect((error as BusinessException).getErrorCode()).toBe(ErrorCodes.TOKEN_MISSING);
+        expect((error as BusinessException).getErrorCode()).toBe(
+          ErrorCodes.TOKEN_MISSING,
+        );
       }
     });
 
     it('should allow access when user has required role', () => {
-      vi.mocked(jwtVerificationService.extractRoles).mockReturnValue(['admin', 'user']);
-      const context = createMockExecutionContext({ sub: 'user-123', roles: ['admin', 'user'] });
+      vi.mocked(jwtVerificationService.extractRoles).mockReturnValue([
+        'admin',
+        'user',
+      ]);
+      const context = createMockExecutionContext({
+        sub: 'user-123',
+        roles: ['admin', 'user'],
+      });
 
       const result = guard.canActivate(context);
 
@@ -89,7 +97,10 @@ describe('RolesGuard', () => {
 
     it('should throw INSUFFICIENT_PERMISSIONS when user lacks required role', () => {
       vi.mocked(jwtVerificationService.extractRoles).mockReturnValue(['user']);
-      const context = createMockExecutionContext({ sub: 'user-123', roles: ['user'] });
+      const context = createMockExecutionContext({
+        sub: 'user-123',
+        roles: ['user'],
+      });
 
       expect(() => guard.canActivate(context)).toThrow(BusinessException);
 
@@ -97,7 +108,9 @@ describe('RolesGuard', () => {
         guard.canActivate(context);
       } catch (error) {
         expect(error).toBeInstanceOf(BusinessException);
-        expect((error as BusinessException).getErrorCode()).toBe(ErrorCodes.INSUFFICIENT_PERMISSIONS);
+        expect((error as BusinessException).getErrorCode()).toBe(
+          ErrorCodes.INSUFFICIENT_PERMISSIONS,
+        );
         expect((error as BusinessException).message).toContain('admin');
       }
     });
@@ -105,12 +118,18 @@ describe('RolesGuard', () => {
 
   describe('when multiple roles are required', () => {
     beforeEach(() => {
-      vi.mocked(reflector.getAllAndOverride).mockReturnValue(['admin', 'super-admin']);
+      vi.mocked(reflector.getAllAndOverride).mockReturnValue([
+        'admin',
+        'super-admin',
+      ]);
     });
 
     it('should allow access when user has any of the required roles', () => {
       vi.mocked(jwtVerificationService.extractRoles).mockReturnValue(['admin']);
-      const context = createMockExecutionContext({ sub: 'user-123', roles: ['admin'] });
+      const context = createMockExecutionContext({
+        sub: 'user-123',
+        roles: ['admin'],
+      });
 
       const result = guard.canActivate(context);
 
@@ -118,8 +137,13 @@ describe('RolesGuard', () => {
     });
 
     it('should allow access when user has another required role', () => {
-      vi.mocked(jwtVerificationService.extractRoles).mockReturnValue(['super-admin']);
-      const context = createMockExecutionContext({ sub: 'user-123', roles: ['super-admin'] });
+      vi.mocked(jwtVerificationService.extractRoles).mockReturnValue([
+        'super-admin',
+      ]);
+      const context = createMockExecutionContext({
+        sub: 'user-123',
+        roles: ['super-admin'],
+      });
 
       const result = guard.canActivate(context);
 
@@ -127,8 +151,14 @@ describe('RolesGuard', () => {
     });
 
     it('should throw INSUFFICIENT_PERMISSIONS when user has none of the required roles', () => {
-      vi.mocked(jwtVerificationService.extractRoles).mockReturnValue(['user', 'moderator']);
-      const context = createMockExecutionContext({ sub: 'user-123', roles: ['user', 'moderator'] });
+      vi.mocked(jwtVerificationService.extractRoles).mockReturnValue([
+        'user',
+        'moderator',
+      ]);
+      const context = createMockExecutionContext({
+        sub: 'user-123',
+        roles: ['user', 'moderator'],
+      });
 
       expect(() => guard.canActivate(context)).toThrow(BusinessException);
 
@@ -136,7 +166,9 @@ describe('RolesGuard', () => {
         guard.canActivate(context);
       } catch (error) {
         expect(error).toBeInstanceOf(BusinessException);
-        expect((error as BusinessException).getErrorCode()).toBe(ErrorCodes.INSUFFICIENT_PERMISSIONS);
+        expect((error as BusinessException).getErrorCode()).toBe(
+          ErrorCodes.INSUFFICIENT_PERMISSIONS,
+        );
       }
     });
   });
@@ -156,7 +188,9 @@ describe('RolesGuard', () => {
         guard.canActivate(context);
       } catch (error) {
         expect(error).toBeInstanceOf(BusinessException);
-        expect((error as BusinessException).getErrorCode()).toBe(ErrorCodes.INSUFFICIENT_PERMISSIONS);
+        expect((error as BusinessException).getErrorCode()).toBe(
+          ErrorCodes.INSUFFICIENT_PERMISSIONS,
+        );
       }
     });
   });

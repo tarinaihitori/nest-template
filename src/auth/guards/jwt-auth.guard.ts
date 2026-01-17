@@ -47,7 +47,7 @@ export class JwtAuthGuard implements CanActivate {
         throw error;
       }
 
-      this.logger.error({ err: error }, 'JWT verification failed');
+      this.logger.error({ err: error as Error }, 'JWT verification failed');
       throw new BusinessException(
         ErrorCodes.TOKEN_INVALID,
         'Token verification failed',

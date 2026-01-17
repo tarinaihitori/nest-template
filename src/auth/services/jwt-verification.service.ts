@@ -80,18 +80,13 @@ export class JwtVerificationService {
     };
 
     return new Promise((resolve, reject) => {
-      jwt.verify(
-        token,
-        getKey,
-        this.getVerifyOptions(),
-        (err, decoded) => {
-          if (err) {
-            reject(this.handleJwtError(err));
-            return;
-          }
-          resolve(decoded as JwtPayload);
-        },
-      );
+      jwt.verify(token, getKey, this.getVerifyOptions(), (err, decoded) => {
+        if (err) {
+          reject(this.handleJwtError(err));
+          return;
+        }
+        resolve(decoded as JwtPayload);
+      });
     });
   }
 
