@@ -111,7 +111,23 @@ NestJS + Fastify + Prisma を使った REST API バックエンドプロジェ�
 
 Dev Container使用時は環境変数が自動設定されるため、手動設定は不要です。
 
+## データモデル
+
+### User
+
+| フィールド | 型 | 説明 |
+|-----------|-----|------|
+| `id` | String | nanoid 18桁（例: `v1StGXR8_Z5jdHi6B`） |
+| `email` | String | メールアドレス（ユニーク） |
+| `name` | String? | ユーザー名（オプション） |
+| `createdAt` | DateTime | 作成日時 |
+| `updatedAt` | DateTime | 更新日時 |
+
 ## 参考ドキュメント
 
+- [開発ガイド](docs/development-guide.md)
 - [エラーハンドリング](docs/error-handling.md)
 - [テストガイドライン](docs/testing-guidelines.md)
+- [ロギング](docs/logging.md)
+- [認証](docs/authentication.md)
+- [ヘルスチェック](docs/health-check.md)

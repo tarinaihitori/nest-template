@@ -12,9 +12,9 @@
 {
   "statusCode": 404,
   "timestamp": "2026-01-16T15:30:00.000Z",
-  "path": "/users/999",
+  "path": "/users/nonexistent1234567",
   "method": "GET",
-  "message": "User with ID 999 not found",
+  "message": "User with ID nonexistent1234567 not found",
   "errorCode": "USER_NOT_FOUND",
   "errors": [],
   "stack": "Error: ..."
@@ -199,16 +199,16 @@ curl -X POST http://localhost:3000/users \
 ### リソース未発見 (404)
 
 ```bash
-curl http://localhost:3000/users/99999
+curl http://localhost:3000/users/nonexistent1234567
 ```
 
 ```json
 {
   "statusCode": 404,
   "timestamp": "2026-01-16T15:30:00.000Z",
-  "path": "/users/99999",
+  "path": "/users/nonexistent1234567",
   "method": "GET",
-  "message": "User with ID 99999 not found",
+  "message": "User with ID nonexistent1234567 not found",
   "errorCode": "USER_NOT_FOUND"
 }
 ```

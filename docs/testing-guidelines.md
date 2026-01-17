@@ -37,11 +37,11 @@
 ```typescript
 it('指定されたIDのユーザーを返すこと', async () => {
   // Arrange
-  const expectedUser = { id: 1, email: 'test@example.com', name: 'Test' };
+  const expectedUser = { id: 'v1StGXR8_Z5jdHi6B', email: 'test@example.com', name: 'Test' };
   repository.findOne.mockResolvedValue(expectedUser);
 
   // Act
-  const result = await service.findOne(1);
+  const result = await service.findOne('v1StGXR8_Z5jdHi6B');
 
   // Assert
   expect(result).toEqual(expectedUser);
@@ -70,7 +70,7 @@ it('should throw NotFoundException when user not found', ...)
 expect(result).toEqual(expectedUser);
 
 // Avoid: メソッド呼び出しを検証（必要な場合のみ使用）
-expect(repository.findOne).toHaveBeenCalledWith(1);
+expect(repository.findOne).toHaveBeenCalledWith('v1StGXR8_Z5jdHi6B');
 ```
 
 ## 本プロジェクトへの適用
