@@ -1,0 +1,125 @@
+# テスト方針ガイドライン
+
+## 概要
+
+本プロジェクトでは、古典学派（Detroit School/Classical School）のアプローチに基づいた単体テストを実装する。
+
+## 古典学派（Detroit School）の原則
+
+### 1. 本物のオブジェクトを優先
+可能な限り実際の依存オブジェクトを使用する。テストダブル（モック、スタブ）は必要最小限に抑える。
+
+### 2. 外部依存のみモック化
+以下の「管理外の依存」のみテストダブルを使用する：
+- データベース
+- 外部API
+- ファイルシステム
+- 現在時刻
+- 乱数生成
+
+### 3. 振る舞いのテスト
+実装の詳細（メソッド呼び出し回数など）ではなく、観測可能な振る舞いを検証する。
+
+### 4. テストの独立性
+各テストは他のテストに依存せず、独立して実行可能であること。
+
+## t_wada推奨のテスト原則
+
+### 1. テストは実行可能な仕様書
+テスト名で振る舞いを明確に記述する。テストを読めば、その機能が何をするか理解できるようにする。
+
+### 2. AAAパターン
+テストは以下の3つのフェーズで構成する：
+- **Arrange（準備）**: テストに必要なデータや状態を準備
+- **Act（実行）**: テスト対象のメソッドを実行
+- **Assert（検証）**: 結果を検証
+
+```typescript
+it('指定されたIDのユーザーを返すこと', async () => {
+  // Arrange
+  const expectedUser = { id: 1, email: 'test@example.com', name: 'Test' };
+  repository.findOne.mockResolvedValue(expectedUser);
+
+  // Act
+  const result = await service.findOne(1);
+
+  // Assert
+  expect(result).toEqual(expectedUser);
+});
+```
+
+### 3. テスト名は日本語で記述
+振る舞いを明確にするため「〜すること」形式で記述する。
+
+```typescript
+// Good
+it('存在しないIDの場合NotFoundExceptionをスローすること', ...)
+
+// Bad
+it('should throw NotFoundException when user not found', ...)
+```
+
+### 4. 過剰なモックを避ける
+必要最小限のテストダブルのみ使用する。モックが増えると、テストが実装の詳細に依存しやすくなる。
+
+### 5. 検証は振る舞いに集中
+`toHaveBeenCalledWith` より `toEqual` を優先する。
+
+```typescript
+// Good: 戻り値を検証
+expect(result).toEqual(expectedUser);
+
+// Avoid: メソッド呼び出しを検証（必要な場合のみ使用）
+expect(repository.findOne).toHaveBeenCalledWith(1);
+```
+
+## 本プロジェクトへの適用
+
+### アーキテクチャとモック境界
+
+```
+Controller → Service → Repository → PrismaService(DB)
+                           ↑
+                      ここがモック境界
+```
+
+### 各レイヤーのテスト方針
+
+| レイヤー | テスト対象 | モック対象 |
+|---------|-----------|-----------|
+| UsersService | ビジネスロジック | UsersRepository |
+| UsersRepository | データアクセスロジック | PrismaService |
+
+### UsersService テスト
+- UsersRepositoryをスタブ化（DBアクセスを避けるため）
+- ビジネスロジック（例外処理など）を検証
+
+### UsersRepository テスト
+- PrismaServiceをスタブ化（DBアクセスを避けるため）
+- Prismaメソッドの正しい呼び出しを検証
+
+## テストファイルの命名規則
+
+- 単体テスト: `*.spec.ts`
+- E2Eテスト: `*.e2e-spec.ts`
+
+## テスト実行コマンド
+
+```bash
+# 全テスト実行
+pnpm test
+
+# ウォッチモード
+pnpm test:watch
+
+# カバレッジレポート
+pnpm test:cov
+
+# E2Eテスト
+pnpm test:e2e
+```
+
+## 参考資料
+
+- 「単体テストの考え方/使い方」(Vladimir Khorikov著)
+- t_wada氏のテスト駆動開発に関する講演資料
