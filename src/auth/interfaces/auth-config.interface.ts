@@ -5,4 +5,6 @@ export interface AuthConfig {
   audience?: string[];
   algorithms: string[];
   rolesClaim: string;
+  scopesClaim: string;
+  scopesDelimiter: string;
 }

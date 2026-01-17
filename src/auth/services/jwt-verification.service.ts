@@ -32,6 +32,10 @@ export class JwtVerificationService {
     const audience = this.configService.get<string>('JWT_AUDIENCE');
     const algorithms = this.configService.get<string>('JWT_ALGORITHMS');
     const rolesClaim = this.configService.get<string>('JWT_ROLES_CLAIM');
+    const scopesClaim = this.configService.get<string>('JWT_SCOPES_CLAIM');
+    const scopesDelimiter = this.configService.get<string>(
+      'JWT_SCOPES_DELIMITER',
+    );
 
     return {
       jwksUri,
@@ -42,6 +46,8 @@ export class JwtVerificationService {
         ? algorithms.split(',').map((s) => s.trim())
         : ['RS256', 'HS256'],
       rolesClaim: rolesClaim || 'roles',
+      scopesClaim: scopesClaim || 'scope',
+      scopesDelimiter: scopesDelimiter || ' ',
     };
   }
 
@@ -177,6 +183,40 @@ export class JwtVerificationService {
 
     if (typeof value === 'string') {
       return [value];
+    }
+
+    return [];
+  }
+
+  getScopesClaim(): string {
+    return this.config.scopesClaim;
+  }
+
+  getScopesDelimiter(): string {
+    return this.config.scopesDelimiter;
+  }
+
+  extractScopes(payload: JwtPayload): string[] {
+    const claimPath = this.config.scopesClaim.split('.');
+    let value: unknown = payload;
+
+    for (const key of claimPath) {
+      if (value && typeof value === 'object' && key in value) {
+        value = (value as Record<string, unknown>)[key];
+      } else {
+        return [];
+      }
+    }
+
+    if (Array.isArray(value)) {
+      return value.filter((item): item is string => typeof item === 'string');
+    }
+
+    if (typeof value === 'string') {
+      return value
+        .split(this.config.scopesDelimiter)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
     }
 
     return [];

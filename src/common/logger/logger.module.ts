@@ -18,8 +18,47 @@ import { randomUUID } from 'crypto';
         return {
           pinoHttp: {
             level: logLevel,
-            genReqId: (req) =>
-              (req.headers['x-correlation-id'] as string) || randomUUID(),
+
+            // メッセージキーを 'message' に変更（CloudWatch標準）
+            messageKey: 'message',
+
+            // ISO 8601 タイムスタンプ（CloudWatch推奨形式）
+            timestamp: () => `,"timestamp":"${new Date().toISOString()}"`,
+
+            // ログレベルを文字列（大文字）に変換
+            formatters: {
+              level: (label) => ({ level: label.toUpperCase() }),
+            },
+
+            // X-Ray対応の相関ID生成
+            genReqId: (req) => {
+              const correlationId = req.headers['x-correlation-id'] as string;
+              if (correlationId) return correlationId;
+
+              const xrayHeader = req.headers['x-amzn-trace-id'] as string;
+              if (xrayHeader) {
+                const rootMatch = xrayHeader.match(/Root=([^;]+)/);
+                if (rootMatch) return rootMatch[1];
+              }
+
+              return randomUUID();
+            },
+
+            // X-Ray情報をログに追加
+            customProps: (req) => {
+              const xrayHeader = req.headers['x-amzn-trace-id'] as string;
+              if (!xrayHeader) return {};
+
+              const props: Record<string, string> = {};
+              xrayHeader.split(';').forEach((part) => {
+                const [key, value] = part.split('=');
+                if (key && value) {
+                  props[`xray_${key.toLowerCase()}`] = value;
+                }
+              });
+              return props;
+            },
+
             customLogLevel: (_req, res, err) => {
               if (res.statusCode >= 500 || err) return 'error';
               if (res.statusCode >= 400) return 'warn';
@@ -52,6 +91,9 @@ import { randomUUID } from 'crypto';
             base: {
               service:
                 configService.get<string>('SERVICE_NAME') || 'nest-project',
+              environment:
+                configService.get<string>('NODE_ENV') || 'development',
+              version: configService.get<string>('APP_VERSION') || '0.0.1',
             },
           },
         };
@@ -59,5 +101,6 @@ import { randomUUID } from 'crypto';
       },
     }),
   ],
+  exports: [PinoLoggerModule],
 })
 export class LoggerModule {}

@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtVerificationService } from './services';
-import { JwtAuthGuard, RolesGuard } from './guards';
+import { JwtAuthGuard, RolesGuard, ScopesGuard } from './guards';
 
 @Module({
   imports: [ConfigModule],
@@ -15,6 +15,10 @@ import { JwtAuthGuard, RolesGuard } from './guards';
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ScopesGuard,
     },
   ],
   exports: [JwtVerificationService],

@@ -1,8 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { PinoLogger, getLoggerToken } from 'nestjs-pino';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
@@ -21,9 +20,15 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     HealthModule,
     UsersModule,
   ],
-  controllers: [AppController],
   providers: [
-    AppService,
+    {
+      provide: getLoggerToken(AllExceptionsFilter.name),
+      useFactory: (logger: PinoLogger) => {
+        logger.setContext(AllExceptionsFilter.name);
+        return logger;
+      },
+      inject: [PinoLogger],
+    },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
   ],
 })

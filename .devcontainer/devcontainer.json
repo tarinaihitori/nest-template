@@ -16,8 +16,7 @@
     }
   },
   "forwardPorts": [
-    3000,
-    5432
+    3000
   ],
   "postCreateCommand": "pnpm install"
 }

@@ -30,10 +30,12 @@ src/auth/
 │   └── jwt-verification.service.ts  # JWT検証サービス
 ├── guards/
 │   ├── jwt-auth.guard.ts       # 認証ガード
-│   └── roles.guard.ts          # 認可ガード
+│   ├── roles.guard.ts          # ロール認可ガード
+│   └── scopes.guard.ts         # スコープ認可ガード
 ├── decorators/
 │   ├── public.decorator.ts     # 公開エンドポイント用デコレータ
 │   ├── roles.decorator.ts      # ロール指定デコレータ
+│   ├── scopes.decorator.ts     # スコープ指定デコレータ
 │   └── current-user.decorator.ts  # 現在のユーザー取得デコレータ
 └── interfaces/
     ├── jwt-payload.interface.ts   # JWTペイロード型定義
@@ -48,8 +50,10 @@ src/auth/
 | `JwtVerificationService` | JWTトークンの検証を行うサービス |
 | `JwtAuthGuard` | リクエストの認証を行うガード |
 | `RolesGuard` | ロールベースのアクセス制御を行うガード |
+| `ScopesGuard` | スコープベースのアクセス制御を行うガード |
 | `@Public` | 認証をスキップするエンドポイントに使用 |
 | `@Roles` | 必要なロールを指定するデコレータ |
+| `@Scopes` | 必要なスコープを指定するデコレータ |
 | `@CurrentUser` | 現在のユーザー情報を取得するデコレータ |
 
 ## 設定方法
@@ -86,6 +90,8 @@ JWT_SECRET=your-256-bit-secret-key-here
 | `JWT_AUDIENCE` | No | オーディエンス検証（カンマ区切りで複数指定可） | `my-api` |
 | `JWT_ALGORITHMS` | No | 許可するアルゴリズム（デフォルト: `RS256,HS256`） | `RS256,RS384,RS512` |
 | `JWT_ROLES_CLAIM` | No | ロール情報のクレームパス（デフォルト: `roles`） | `realm_access.roles` |
+| `JWT_SCOPES_CLAIM` | No | スコープ情報のクレームパス（デフォルト: `scope`） | `permissions` |
+| `JWT_SCOPES_DELIMITER` | No | スコープの区切り文字（デフォルト: スペース） | `,` |
 
 ※1: `JWT_JWKS_URI`または`JWT_SECRET`のいずれかが必須
 
@@ -105,6 +111,22 @@ JWT_ROLES_CLAIM=cognito:groups
 JWT_ROLES_CLAIM=roles
 ```
 
+### プロバイダ別スコープクレーム設定例
+
+```bash
+# Keycloak（標準OAuth 2.0スコープ）
+JWT_SCOPES_CLAIM=scope
+
+# Auth0（パーミッション配列形式）
+JWT_SCOPES_CLAIM=permissions
+
+# AWS Cognito
+JWT_SCOPES_CLAIM=scope
+
+# カスタム
+JWT_SCOPES_CLAIM=scope
+```
+
 ## エラーコード
 
 | エラーコード | HTTPステータス | 説明 |
@@ -112,7 +134,8 @@ JWT_ROLES_CLAIM=roles
 | `TOKEN_MISSING` | 401 | Authorizationヘッダーにトークンが提供されていない |
 | `TOKEN_INVALID` | 401 | トークンが無効（署名不正、フォーマット不正等） |
 | `TOKEN_EXPIRED` | 401 | トークンの有効期限が切れている |
-| `INSUFFICIENT_PERMISSIONS` | 403 | 要求されたリソースへのアクセス権限がない |
+| `INSUFFICIENT_PERMISSIONS` | 403 | 要求されたロールを持っていない |
+| `INSUFFICIENT_SCOPE` | 403 | 要求されたスコープを持っていない |
 
 ### エラーレスポンス例
 
@@ -216,6 +239,70 @@ export class ManagementController {
   }
 }
 ```
+
+### スコープベースアクセス制御
+
+OAuth 2.0スコープに基づいたアクセス制御には`@Scopes()`デコレータを使用します。
+
+```typescript
+import { Controller, Get, Post, Delete } from '@nestjs/common';
+import { Scopes } from '../auth/decorators/scopes.decorator';
+
+@Controller('users')
+export class UsersController {
+  @Get()
+  @Scopes('users:read')
+  findAll() {
+    // users:readスコープを持つユーザーのみアクセス可能
+    return [];
+  }
+
+  @Post()
+  @Scopes('users:write')
+  create() {
+    // users:writeスコープを持つユーザーのみアクセス可能
+    return {};
+  }
+
+  @Delete(':id')
+  @Scopes('users:delete', 'admin:*')
+  remove() {
+    // users:deleteまたはadmin:*スコープを持つユーザーがアクセス可能
+    return { deleted: true };
+  }
+}
+```
+
+### ロールとスコープの組み合わせ
+
+ロールとスコープは**AND条件**で評価されます。両方指定した場合、両方の条件を満たす必要があります。
+
+```typescript
+import { Controller, Delete } from '@nestjs/common';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Scopes } from '../auth/decorators/scopes.decorator';
+
+@Controller('admin')
+export class AdminController {
+  @Delete('users/:id')
+  @Roles('admin')           // adminロールが必要 AND
+  @Scopes('users:delete')   // users:deleteスコープも必要
+  deleteUser() {
+    return { deleted: true };
+  }
+}
+```
+
+### ワイルドカードスコープ
+
+ワイルドカードを使用して、スコープのグループに対するアクセスを許可できます。
+
+| ユーザースコープ | 必要なスコープ | マッチ |
+|----------------|---------------|--------|
+| `admin:*` | `admin:read` | ✅ |
+| `admin:*` | `admin:write` | ✅ |
+| `admin:*` | `users:read` | ❌ |
+| `*` | 任意 | ✅ |
 
 ## Keycloak設定例
 

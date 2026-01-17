@@ -23,6 +23,7 @@ export const ErrorCodes = {
   TOKEN_INVALID: 'TOKEN_INVALID',
   TOKEN_EXPIRED: 'TOKEN_EXPIRED',
   INSUFFICIENT_PERMISSIONS: 'INSUFFICIENT_PERMISSIONS',
+  INSUFFICIENT_SCOPE: 'INSUFFICIENT_SCOPE',
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

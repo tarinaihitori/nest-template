@@ -293,4 +293,209 @@ describe('JwtVerificationService', () => {
       expect(service.getRolesClaim()).toBe('roles');
     });
   });
+
+  describe('extractScopes', () => {
+    describe('スペース区切りのスコープ文字列', () => {
+      beforeEach(() => {
+        configService = createMockConfigService({
+          JWT_SECRET: TEST_SECRET,
+          JWT_SCOPES_CLAIM: 'scope',
+        });
+        service = new JwtVerificationService(configService);
+      });
+
+      it('スペース区切りのスコープ文字列からスコープを抽出できること', () => {
+        // Arrange
+        const payload = { sub: 'user-123', scope: 'users:read users:write' };
+
+        // Act
+        const scopes = service.extractScopes(payload);
+
+        // Assert
+        expect(scopes).toEqual(['users:read', 'users:write']);
+      });
+
+      it('単一スコープを抽出できること', () => {
+        // Arrange
+        const payload = { sub: 'user-123', scope: 'users:read' };
+
+        // Act
+        const scopes = service.extractScopes(payload);
+
+        // Assert
+        expect(scopes).toEqual(['users:read']);
+      });
+
+      it('scopeクレームがない場合空配列を返すこと', () => {
+        // Arrange
+        const payload = { sub: 'user-123' };
+
+        // Act
+        const scopes = service.extractScopes(payload);
+
+        // Assert
+        expect(scopes).toEqual([]);
+      });
+
+      it('空のスコープ文字列の場合空配列を返すこと', () => {
+        // Arrange
+        const payload = { sub: 'user-123', scope: '' };
+
+        // Act
+        const scopes = service.extractScopes(payload);
+
+        // Assert
+        expect(scopes).toEqual([]);
+      });
+    });
+
+    describe('配列形式のスコープ', () => {
+      beforeEach(() => {
+        configService = createMockConfigService({
+          JWT_SECRET: TEST_SECRET,
+          JWT_SCOPES_CLAIM: 'permissions',
+        });
+        service = new JwtVerificationService(configService);
+      });
+
+      it('配列形式のスコープを抽出できること（Auth0形式）', () => {
+        // Arrange
+        const payload = {
+          sub: 'user-123',
+          permissions: ['users:read', 'users:write'],
+        };
+
+        // Act
+        const scopes = service.extractScopes(payload);
+
+        // Assert
+        expect(scopes).toEqual(['users:read', 'users:write']);
+      });
+    });
+
+    describe('カスタム区切り文字', () => {
+      beforeEach(() => {
+        configService = createMockConfigService({
+          JWT_SECRET: TEST_SECRET,
+          JWT_SCOPES_CLAIM: 'scope',
+          JWT_SCOPES_DELIMITER: ',',
+        });
+        service = new JwtVerificationService(configService);
+      });
+
+      it('カンマ区切りのスコープを抽出できること', () => {
+        // Arrange
+        const payload = { sub: 'user-123', scope: 'users:read,users:write' };
+
+        // Act
+        const scopes = service.extractScopes(payload);
+
+        // Assert
+        expect(scopes).toEqual(['users:read', 'users:write']);
+      });
+
+      it('区切り文字の前後にスペースがあっても正しく抽出できること', () => {
+        // Arrange
+        const payload = {
+          sub: 'user-123',
+          scope: 'users:read , users:write , admin:*',
+        };
+
+        // Act
+        const scopes = service.extractScopes(payload);
+
+        // Assert
+        expect(scopes).toEqual(['users:read', 'users:write', 'admin:*']);
+      });
+    });
+
+    describe('ネストしたクレームパス', () => {
+      beforeEach(() => {
+        configService = createMockConfigService({
+          JWT_SECRET: TEST_SECRET,
+          JWT_SCOPES_CLAIM: 'resource_access.api.scopes',
+        });
+        service = new JwtVerificationService(configService);
+      });
+
+      it('ネストしたパスからスコープを抽出できること', () => {
+        // Arrange
+        const payload = {
+          sub: 'user-123',
+          resource_access: {
+            api: {
+              scopes: ['users:read', 'users:write'],
+            },
+          },
+        };
+
+        // Act
+        const scopes = service.extractScopes(payload);
+
+        // Assert
+        expect(scopes).toEqual(['users:read', 'users:write']);
+      });
+
+      it('ネストしたパスが存在しない場合空配列を返すこと', () => {
+        // Arrange
+        const payload = { sub: 'user-123' };
+
+        // Act
+        const scopes = service.extractScopes(payload);
+
+        // Assert
+        expect(scopes).toEqual([]);
+      });
+    });
+  });
+
+  describe('getScopesClaim', () => {
+    it('設定されたscopesクレームを返すこと', () => {
+      // Arrange
+      configService = createMockConfigService({
+        JWT_SECRET: TEST_SECRET,
+        JWT_SCOPES_CLAIM: 'permissions',
+      });
+      service = new JwtVerificationService(configService);
+
+      // Act & Assert
+      expect(service.getScopesClaim()).toBe('permissions');
+    });
+
+    it('未設定の場合デフォルトのscopesクレームを返すこと', () => {
+      // Arrange
+      configService = createMockConfigService({
+        JWT_SECRET: TEST_SECRET,
+      });
+      service = new JwtVerificationService(configService);
+
+      // Act & Assert
+      expect(service.getScopesClaim()).toBe('scope');
+    });
+  });
+
+  describe('getScopesDelimiter', () => {
+    it('設定された区切り文字を返すこと', () => {
+      // Arrange
+      configService = createMockConfigService({
+        JWT_SECRET: TEST_SECRET,
+        JWT_SCOPES_DELIMITER: ',',
+      });
+      service = new JwtVerificationService(configService);
+
+      // Act & Assert
+      expect(service.getScopesDelimiter()).toBe(',');
+    });
+
+    it('未設定の場合デフォルトのスペースを返すこと', () => {
+      // Arrange
+      configService = createMockConfigService({
+        JWT_SECRET: TEST_SECRET,
+      });
+      service = new JwtVerificationService(configService);
+
+      // Act & Assert
+      expect(service.getScopesDelimiter()).toBe(' ');
+    });
+  });
 });

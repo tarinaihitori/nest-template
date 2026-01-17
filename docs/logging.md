@@ -21,11 +21,13 @@
 | `LOG_LEVEL` | ログレベル (trace/debug/info/warn/error/fatal) | 開発: `debug`, 本番: `info` |
 | `SERVICE_NAME` | サービス名 (ログに含まれる) | `nest-project` |
 | `NODE_ENV` | 環境識別 | - |
+| `APP_VERSION` | アプリケーションバージョン | `0.0.1` |
 
 ```env
 # .env
 LOG_LEVEL=debug
 SERVICE_NAME=nest-project
+APP_VERSION=0.0.1
 ```
 
 ---
@@ -59,14 +61,16 @@ SERVICE_NAME=nest-project
 
 ```json
 {
-  "level": 30,
-  "time": 1705489845123,
+  "level": "INFO",
+  "timestamp": "2024-01-17T10:30:45.123Z",
   "service": "nest-project",
+  "environment": "production",
+  "version": "0.0.1",
   "reqId": "550e8400-e29b-41d4-a716-446655440000",
   "req": {"method": "GET", "url": "/api/users"},
   "res": {"statusCode": 200},
   "responseTime": 45,
-  "msg": "GET /api/users completed"
+  "message": "GET /api/users completed"
 }
 ```
 
@@ -368,4 +372,93 @@ NODE_ENV=production pnpm run start:prod
     "pino-pretty": "^13.1.3"
   }
 }
+```
+
+---
+
+## AWS CloudWatch Logs Insights
+
+### 概要
+
+本プロジェクトのログ出力は、AWS CloudWatch Logs Insightsで効率的に検索・分析できるよう最適化されています。
+
+| 項目 | 形式 | 説明 |
+|------|------|------|
+| `level` | 文字列 (`INFO`, `ERROR`等) | クエリしやすい形式 |
+| `timestamp` | ISO 8601 (`2024-01-17T10:30:45.123Z`) | CloudWatch推奨形式 |
+| `message` | 文字列 | CloudWatch標準フィールド名 |
+| `environment` | 文字列 | マルチ環境でのフィルタリング用 |
+| `version` | 文字列 | アプリケーションバージョン |
+
+### X-Ray統合
+
+AWS X-Rayとの統合により、分散トレーシングが可能です。
+
+#### X-Rayヘッダーからの自動抽出
+
+リクエストに `x-amzn-trace-id` ヘッダーが含まれている場合、以下の情報がログに自動追加されます：
+
+```json
+{
+  "reqId": "1-678ab123-abc123def456",
+  "xray_root": "1-678ab123-abc123def456",
+  "xray_parent": "53995c3f42cd8ad8",
+  "xray_sampled": "1"
+}
+```
+
+#### 相関ID優先順位
+
+1. `x-correlation-id` ヘッダーが存在する場合はその値を使用
+2. `x-amzn-trace-id` ヘッダーの `Root` 値を使用
+3. どちらもない場合は UUID を自動生成
+
+### CloudWatch Logs Insights クエリ例
+
+#### エラーログ検索
+
+```
+fields timestamp, level, service, message, reqId
+| filter level = "ERROR"
+| sort timestamp desc
+```
+
+#### 特定リクエストの追跡
+
+```
+fields timestamp, level, message
+| filter reqId = "550e8400-e29b-41d4-a716-446655440000"
+| sort timestamp asc
+```
+
+#### X-Rayトレースでの追跡
+
+```
+fields timestamp, level, message
+| filter xray_root = "1-678ab123-abc123def456"
+| sort timestamp asc
+```
+
+#### 環境別のログフィルタリング
+
+```
+fields timestamp, level, message
+| filter environment = "production"
+| filter level in ["ERROR", "WARN"]
+| sort timestamp desc
+```
+
+#### レスポンス時間分析
+
+```
+fields timestamp, req.url, responseTime
+| stats avg(responseTime), max(responseTime) by req.url
+```
+
+#### バージョン別エラー率
+
+```
+fields version
+| filter level = "ERROR"
+| stats count(*) as error_count by version
 ```
