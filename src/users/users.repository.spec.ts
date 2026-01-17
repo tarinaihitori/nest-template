@@ -18,7 +18,7 @@ describe('UsersRepository', () => {
   };
 
   const createMockUser = (overrides: Partial<User> = {}): User => ({
-    id: 1,
+    id: 'v1StGXR8_Z5jdHi6B',
     email: 'test@example.com',
     name: 'Test User',
     createdAt: new Date('2024-01-01'),
@@ -64,8 +64,8 @@ describe('UsersRepository', () => {
     it('全ユーザーを取得すること', async () => {
       // Arrange
       const expectedUsers = [
-        createMockUser({ id: 1, email: 'user1@example.com' }),
-        createMockUser({ id: 2, email: 'user2@example.com' }),
+        createMockUser({ id: 'abc123456789012345', email: 'user1@example.com' }),
+        createMockUser({ id: 'def123456789012345', email: 'user2@example.com' }),
       ];
       prisma.user.findMany.mockResolvedValue(expectedUsers);
 
@@ -91,11 +91,11 @@ describe('UsersRepository', () => {
   describe('findOne', () => {
     it('指定IDのユーザーを取得すること', async () => {
       // Arrange
-      const expectedUser = createMockUser({ id: 1 });
+      const expectedUser = createMockUser({ id: 'v1StGXR8_Z5jdHi6B' });
       prisma.user.findUnique.mockResolvedValue(expectedUser);
 
       // Act
-      const result = await repository.findOne(1);
+      const result = await repository.findOne('v1StGXR8_Z5jdHi6B');
 
       // Assert
       expect(result).toEqual(expectedUser);
@@ -106,7 +106,7 @@ describe('UsersRepository', () => {
       prisma.user.findUnique.mockResolvedValue(null);
 
       // Act
-      const result = await repository.findOne(999);
+      const result = await repository.findOne('nonexistent1234567');
 
       // Assert
       expect(result).toBeNull();
@@ -143,14 +143,14 @@ describe('UsersRepository', () => {
       // Arrange
       const updateUserDto: UpdateUserDto = { name: 'Updated Name' };
       const updatedUser = createMockUser({
-        id: 1,
+        id: 'v1StGXR8_Z5jdHi6B',
         name: 'Updated Name',
         updatedAt: new Date('2024-01-02'),
       });
       prisma.user.update.mockResolvedValue(updatedUser);
 
       // Act
-      const result = await repository.update(1, updateUserDto);
+      const result = await repository.update('v1StGXR8_Z5jdHi6B', updateUserDto);
 
       // Assert
       expect(result).toEqual(updatedUser);
@@ -160,11 +160,11 @@ describe('UsersRepository', () => {
   describe('remove', () => {
     it('ユーザーを削除すること', async () => {
       // Arrange
-      const deletedUser = createMockUser({ id: 1 });
+      const deletedUser = createMockUser({ id: 'v1StGXR8_Z5jdHi6B' });
       prisma.user.delete.mockResolvedValue(deletedUser);
 
       // Act
-      const result = await repository.remove(1);
+      const result = await repository.remove('v1StGXR8_Z5jdHi6B');
 
       // Assert
       expect(result).toEqual(deletedUser);

@@ -19,7 +19,7 @@ describe('UsersService', () => {
   };
 
   const createMockUser = (overrides: Partial<User> = {}): User => ({
-    id: 1,
+    id: 'v1StGXR8_Z5jdHi6B',
     email: 'test@example.com',
     name: 'Test User',
     createdAt: new Date('2024-01-01'),
@@ -64,8 +64,8 @@ describe('UsersService', () => {
     it('全ユーザーのリストを返すこと', async () => {
       // Arrange
       const expectedUsers = [
-        createMockUser({ id: 1, email: 'user1@example.com' }),
-        createMockUser({ id: 2, email: 'user2@example.com' }),
+        createMockUser({ id: 'abc123456789012345', email: 'user1@example.com' }),
+        createMockUser({ id: 'def123456789012345', email: 'user2@example.com' }),
       ];
       repository.findAll.mockResolvedValue(expectedUsers);
 
@@ -91,11 +91,11 @@ describe('UsersService', () => {
   describe('findOne', () => {
     it('指定されたIDのユーザーを返すこと', async () => {
       // Arrange
-      const expectedUser = createMockUser({ id: 1 });
+      const expectedUser = createMockUser({ id: 'v1StGXR8_Z5jdHi6B' });
       repository.findOne.mockResolvedValue(expectedUser);
 
       // Act
-      const result = await service.findOne(1);
+      const result = await service.findOne('v1StGXR8_Z5jdHi6B');
 
       // Assert
       expect(result).toEqual(expectedUser);
@@ -106,9 +106,9 @@ describe('UsersService', () => {
       repository.findOne.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.findOne(999)).rejects.toThrow(BusinessException);
-      await expect(service.findOne(999)).rejects.toThrow(
-        'User with ID 999 not found',
+      await expect(service.findOne('nonexistent1234567')).rejects.toThrow(BusinessException);
+      await expect(service.findOne('nonexistent1234567')).rejects.toThrow(
+        'User with ID nonexistent1234567 not found',
       );
     });
 
@@ -118,7 +118,7 @@ describe('UsersService', () => {
 
       // Act & Assert
       try {
-        await service.findOne(999);
+        await service.findOne('nonexistent1234567');
       } catch (error) {
         expect(error).toBeInstanceOf(BusinessException);
         expect((error as BusinessException).errorCode).toBe(
@@ -131,10 +131,10 @@ describe('UsersService', () => {
   describe('update', () => {
     it('ユーザー情報を更新して返すこと', async () => {
       // Arrange
-      const existingUser = createMockUser({ id: 1 });
+      const existingUser = createMockUser({ id: 'v1StGXR8_Z5jdHi6B' });
       const updateUserDto: UpdateUserDto = { name: 'Updated Name' };
       const updatedUser = createMockUser({
-        id: 1,
+        id: 'v1StGXR8_Z5jdHi6B',
         name: 'Updated Name',
         updatedAt: new Date('2024-01-02'),
       });
@@ -142,7 +142,7 @@ describe('UsersService', () => {
       repository.update.mockResolvedValue(updatedUser);
 
       // Act
-      const result = await service.update(1, updateUserDto);
+      const result = await service.update('v1StGXR8_Z5jdHi6B', updateUserDto);
 
       // Assert
       expect(result).toEqual(updatedUser);
@@ -154,11 +154,11 @@ describe('UsersService', () => {
       repository.findOne.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.update(999, updateUserDto)).rejects.toThrow(
+      await expect(service.update('nonexistent1234567', updateUserDto)).rejects.toThrow(
         BusinessException,
       );
-      await expect(service.update(999, updateUserDto)).rejects.toThrow(
-        'User with ID 999 not found',
+      await expect(service.update('nonexistent1234567', updateUserDto)).rejects.toThrow(
+        'User with ID nonexistent1234567 not found',
       );
     });
   });
@@ -166,12 +166,12 @@ describe('UsersService', () => {
   describe('remove', () => {
     it('ユーザーを削除して返すこと', async () => {
       // Arrange
-      const existingUser = createMockUser({ id: 1 });
+      const existingUser = createMockUser({ id: 'v1StGXR8_Z5jdHi6B' });
       repository.findOne.mockResolvedValue(existingUser);
       repository.remove.mockResolvedValue(existingUser);
 
       // Act
-      const result = await service.remove(1);
+      const result = await service.remove('v1StGXR8_Z5jdHi6B');
 
       // Assert
       expect(result).toEqual(existingUser);
@@ -182,9 +182,9 @@ describe('UsersService', () => {
       repository.findOne.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.remove(999)).rejects.toThrow(BusinessException);
-      await expect(service.remove(999)).rejects.toThrow(
-        'User with ID 999 not found',
+      await expect(service.remove('nonexistent1234567')).rejects.toThrow(BusinessException);
+      await expect(service.remove('nonexistent1234567')).rejects.toThrow(
+        'User with ID nonexistent1234567 not found',
       );
     });
   });

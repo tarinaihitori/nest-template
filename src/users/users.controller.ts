@@ -6,7 +6,6 @@ import {
   Patch,
   Param,
   Delete,
-  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -47,16 +46,16 @@ export class UsersController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a user by ID' })
-  @ApiParam({ name: 'id', description: 'User ID', type: Number })
+  @ApiParam({ name: 'id', description: 'User ID', type: String, example: 'v1StGXR8_Z5jdHi6B' })
   @ApiResponse({ status: 200, description: 'User found', type: User })
   @ApiResponse({ status: 404, description: 'User not found' })
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a user' })
-  @ApiParam({ name: 'id', description: 'User ID', type: Number })
+  @ApiParam({ name: 'id', description: 'User ID', type: String, example: 'v1StGXR8_Z5jdHi6B' })
   @ApiResponse({
     status: 200,
     description: 'User updated successfully',
@@ -64,7 +63,7 @@ export class UsersController {
   })
   @ApiResponse({ status: 404, description: 'User not found' })
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
     return this.usersService.update(id, updateUserDto);
@@ -72,10 +71,10 @@ export class UsersController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a user' })
-  @ApiParam({ name: 'id', description: 'User ID', type: Number })
+  @ApiParam({ name: 'id', description: 'User ID', type: String, example: 'v1StGXR8_Z5jdHi6B' })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  remove(@Param('id', ParseIntPipe) id: number) {
+  remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }
 }

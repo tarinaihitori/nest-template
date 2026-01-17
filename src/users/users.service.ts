@@ -18,7 +18,7 @@ export class UsersService {
     return this.usersRepository.findAll();
   }
 
-  async findOne(id: number): Promise<User> {
+  async findOne(id: string): Promise<User> {
     const user = await this.usersRepository.findOne(id);
     if (!user) {
       throw new BusinessException(
@@ -30,12 +30,12 @@ export class UsersService {
     return user;
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     await this.findOne(id);
     return this.usersRepository.update(id, updateUserDto);
   }
 
-  async remove(id: number): Promise<User> {
+  async remove(id: string): Promise<User> {
     await this.findOne(id);
     return this.usersRepository.remove(id);
   }

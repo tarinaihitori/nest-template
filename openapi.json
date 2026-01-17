@@ -112,7 +112,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "example": "v1StGXR8_Z5jdHi6B",
+              "type": "string"
             }
           }
         ],
@@ -150,7 +151,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "example": "v1StGXR8_Z5jdHi6B",
+              "type": "string"
             }
           }
         ],
@@ -198,7 +200,8 @@
             "in": "path",
             "description": "User ID",
             "schema": {
-              "type": "number"
+              "example": "v1StGXR8_Z5jdHi6B",
+              "type": "string"
             }
           }
         ],
@@ -262,9 +265,9 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
+            "type": "string",
             "description": "User ID",
-            "example": 1
+            "example": "v1StGXR8_Z5jdHi6B"
           },
           "email": {
             "type": "string",
