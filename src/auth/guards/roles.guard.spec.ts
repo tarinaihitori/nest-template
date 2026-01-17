@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { RolesGuard } from '../guards/roles.guard';
+import { RolesGuard } from './roles.guard';
 import { JwtVerificationService } from '../services/jwt-verification.service';
 import { BusinessException } from '../../common/exceptions/business.exception';
 import { ErrorCodes } from '../../common/constants/error-codes.constant';
@@ -40,34 +40,42 @@ describe('RolesGuard', () => {
     guard = new RolesGuard(jwtVerificationService, reflector);
   });
 
-  describe('when no roles are required', () => {
-    it('should allow access when no roles decorator is present', () => {
+  describe('ロールが不要な場合', () => {
+    it('Rolesデコレーターがない場合アクセスを許可すること', () => {
+      // Arrange
       vi.mocked(reflector.getAllAndOverride).mockReturnValue(undefined);
       const context = createMockExecutionContext({ sub: 'user-123' });
 
+      // Act
       const result = guard.canActivate(context);
 
+      // Assert
       expect(result).toBe(true);
     });
 
-    it('should allow access when roles array is empty', () => {
+    it('ロール配列が空の場合アクセスを許可すること', () => {
+      // Arrange
       vi.mocked(reflector.getAllAndOverride).mockReturnValue([]);
       const context = createMockExecutionContext({ sub: 'user-123' });
 
+      // Act
       const result = guard.canActivate(context);
 
+      // Assert
       expect(result).toBe(true);
     });
   });
 
-  describe('when roles are required', () => {
+  describe('ロールが必要な場合', () => {
     beforeEach(() => {
       vi.mocked(reflector.getAllAndOverride).mockReturnValue(['admin']);
     });
 
-    it('should throw TOKEN_MISSING when user is not authenticated', () => {
+    it('ユーザーが認証されていない場合TOKEN_MISSINGをスローすること', () => {
+      // Arrange
       const context = createMockExecutionContext(undefined);
 
+      // Act & Assert
       expect(() => guard.canActivate(context)).toThrow(BusinessException);
 
       try {
@@ -80,7 +88,8 @@ describe('RolesGuard', () => {
       }
     });
 
-    it('should allow access when user has required role', () => {
+    it('ユーザーが必要なロールを持っている場合アクセスを許可すること', () => {
+      // Arrange
       vi.mocked(jwtVerificationService.extractRoles).mockReturnValue([
         'admin',
         'user',
@@ -90,18 +99,22 @@ describe('RolesGuard', () => {
         roles: ['admin', 'user'],
       });
 
+      // Act
       const result = guard.canActivate(context);
 
+      // Assert
       expect(result).toBe(true);
     });
 
-    it('should throw INSUFFICIENT_PERMISSIONS when user lacks required role', () => {
+    it('ユーザーが必要なロールを持っていない場合INSUFFICIENT_PERMISSIONSをスローすること', () => {
+      // Arrange
       vi.mocked(jwtVerificationService.extractRoles).mockReturnValue(['user']);
       const context = createMockExecutionContext({
         sub: 'user-123',
         roles: ['user'],
       });
 
+      // Act & Assert
       expect(() => guard.canActivate(context)).toThrow(BusinessException);
 
       try {
@@ -116,7 +129,7 @@ describe('RolesGuard', () => {
     });
   });
 
-  describe('when multiple roles are required', () => {
+  describe('複数ロールが必要な場合', () => {
     beforeEach(() => {
       vi.mocked(reflector.getAllAndOverride).mockReturnValue([
         'admin',
@@ -124,19 +137,23 @@ describe('RolesGuard', () => {
       ]);
     });
 
-    it('should allow access when user has any of the required roles', () => {
+    it('ユーザーが必要なロールのいずれかを持っている場合アクセスを許可すること', () => {
+      // Arrange
       vi.mocked(jwtVerificationService.extractRoles).mockReturnValue(['admin']);
       const context = createMockExecutionContext({
         sub: 'user-123',
         roles: ['admin'],
       });
 
+      // Act
       const result = guard.canActivate(context);
 
+      // Assert
       expect(result).toBe(true);
     });
 
-    it('should allow access when user has another required role', () => {
+    it('ユーザーが別の必要なロールを持っている場合アクセスを許可すること', () => {
+      // Arrange
       vi.mocked(jwtVerificationService.extractRoles).mockReturnValue([
         'super-admin',
       ]);
@@ -145,12 +162,15 @@ describe('RolesGuard', () => {
         roles: ['super-admin'],
       });
 
+      // Act
       const result = guard.canActivate(context);
 
+      // Assert
       expect(result).toBe(true);
     });
 
-    it('should throw INSUFFICIENT_PERMISSIONS when user has none of the required roles', () => {
+    it('ユーザーが必要なロールをどれも持っていない場合INSUFFICIENT_PERMISSIONSをスローすること', () => {
+      // Arrange
       vi.mocked(jwtVerificationService.extractRoles).mockReturnValue([
         'user',
         'moderator',
@@ -160,6 +180,7 @@ describe('RolesGuard', () => {
         roles: ['user', 'moderator'],
       });
 
+      // Act & Assert
       expect(() => guard.canActivate(context)).toThrow(BusinessException);
 
       try {
@@ -173,15 +194,17 @@ describe('RolesGuard', () => {
     });
   });
 
-  describe('when user has no roles', () => {
+  describe('ユーザーがロールを持っていない場合', () => {
     beforeEach(() => {
       vi.mocked(reflector.getAllAndOverride).mockReturnValue(['admin']);
     });
 
-    it('should throw INSUFFICIENT_PERMISSIONS when user has empty roles array', () => {
+    it('ユーザーのロール配列が空の場合INSUFFICIENT_PERMISSIONSをスローすること', () => {
+      // Arrange
       vi.mocked(jwtVerificationService.extractRoles).mockReturnValue([]);
       const context = createMockExecutionContext({ sub: 'user-123' });
 
+      // Act & Assert
       expect(() => guard.canActivate(context)).toThrow(BusinessException);
 
       try {

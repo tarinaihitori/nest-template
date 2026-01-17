@@ -23,7 +23,8 @@ describe('HealthController', () => {
   });
 
   describe('check', () => {
-    it('should return 200 when healthy', async () => {
+    it('正常な場合200を返すこと', async () => {
+      // Arrange
       const healthyResult: HealthCheckResult = {
         status: 'healthy',
         timestamp: new Date().toISOString(),
@@ -32,16 +33,18 @@ describe('HealthController', () => {
           database: { status: 'up', responseTime: 5 },
         },
       };
-
       vi.mocked(healthService.check).mockResolvedValue(healthyResult);
 
+      // Act
       await controller.check(mockReply);
 
+      // Assert
       expect(mockReply.status).toHaveBeenCalledWith(HttpStatus.OK);
       expect(mockReply.send).toHaveBeenCalledWith(healthyResult);
     });
 
-    it('should return 503 when unhealthy', async () => {
+    it('異常な場合503を返すこと', async () => {
+      // Arrange
       const unhealthyResult: HealthCheckResult = {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
@@ -50,11 +53,12 @@ describe('HealthController', () => {
           database: { status: 'down' },
         },
       };
-
       vi.mocked(healthService.check).mockResolvedValue(unhealthyResult);
 
+      // Act
       await controller.check(mockReply);
 
+      // Assert
       expect(mockReply.status).toHaveBeenCalledWith(
         HttpStatus.SERVICE_UNAVAILABLE,
       );
@@ -63,9 +67,11 @@ describe('HealthController', () => {
   });
 
   describe('liveness', () => {
-    it('should return ok status', () => {
+    it('okステータスを返すこと', () => {
+      // Arrange & Act
       const result = controller.liveness();
 
+      // Assert
       expect(result).toEqual({ status: 'ok' });
     });
   });

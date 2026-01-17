@@ -98,6 +98,35 @@ Controller → Service → Repository → PrismaService(DB)
 - PrismaServiceをスタブ化（DBアクセスを避けるため）
 - Prismaメソッドの正しい呼び出しを検証
 
+## テストファイルの配置（Co-locationパターン）
+
+テストファイルは実装ファイルと同じディレクトリに配置する。
+
+```
+src/
+├── users/
+│   ├── users.service.ts
+│   ├── users.service.spec.ts     # ← 実装と同階層
+│   ├── users.repository.ts
+│   └── users.repository.spec.ts  # ← 実装と同階層
+├── auth/
+│   ├── guards/
+│   │   ├── jwt-auth.guard.ts
+│   │   ├── jwt-auth.guard.spec.ts  # ← 実装と同階層
+│   │   ├── roles.guard.ts
+│   │   └── roles.guard.spec.ts     # ← 実装と同階層
+│   └── services/
+│       ├── jwt-verification.service.ts
+│       └── jwt-verification.service.spec.ts  # ← 実装と同階層
+```
+
+### なぜCo-locationパターンか
+
+- **関連性の明確化**: テストと実装が隣り合うため、関連性が一目でわかる
+- **ナビゲーションの容易さ**: 実装ファイルを開いた状態でテストファイルを見つけやすい
+- **保守性の向上**: 実装の移動や削除時にテストファイルを忘れにくい
+- **`__tests__`フォルダは使用しない**: ファイルが離れてしまい、管理が煩雑になる
+
 ## テストファイルの命名規則
 
 - 単体テスト: `*.spec.ts`
