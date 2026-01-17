@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
-import { ErrorCodes } from '../constants/error-codes.constant';
+import { ErrorCodes, ErrorCode } from '../constants/error-codes.constant';
 import {
   ErrorResponse,
   ValidationErrorDetail,
@@ -152,8 +152,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     return 'An error occurred';
   }
 
-  private mapStatusToErrorCode(status: HttpStatus): string {
-    const statusMap: Record<number, string> = {
+  private mapStatusToErrorCode(status: HttpStatus): ErrorCode {
+    const statusMap: Record<number, ErrorCode> = {
       [HttpStatus.BAD_REQUEST]: ErrorCodes.BAD_REQUEST,
       [HttpStatus.UNAUTHORIZED]: ErrorCodes.UNAUTHORIZED,
       [HttpStatus.FORBIDDEN]: ErrorCodes.FORBIDDEN,
@@ -161,7 +161,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       [HttpStatus.CONFLICT]: ErrorCodes.CONFLICT,
     };
 
-    return statusMap[status] || ErrorCodes.INTERNAL_SERVER_ERROR;
+    return statusMap[status] ?? ErrorCodes.INTERNAL_SERVER_ERROR;
   }
 
   private logError(exception: unknown, errorResponse: ErrorResponse): void {
