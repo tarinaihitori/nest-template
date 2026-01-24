@@ -6,6 +6,20 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
+  constructor() {
+    super({
+      log:
+        process.env.NODE_ENV === 'production'
+          ? ['warn', 'error']
+          : [
+              { level: 'query', emit: 'stdout' },
+              { level: 'info', emit: 'stdout' },
+              { level: 'warn', emit: 'stdout' },
+              { level: 'error', emit: 'stdout' },
+            ],
+    });
+  }
+
   async onModuleInit() {
     await this.$connect();
   }

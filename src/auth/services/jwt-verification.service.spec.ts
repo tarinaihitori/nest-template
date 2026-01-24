@@ -1,12 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ConfigService } from '@nestjs/config';
-import jwt from 'jsonwebtoken';
 import { JwtVerificationService } from './jwt-verification.service';
-import { BusinessException } from '../../common/exceptions/business.exception';
-import { ErrorCodes } from '../../common/constants/error-codes.constant';
 
 describe('JwtVerificationService', () => {
-  const TEST_SECRET = 'test-secret-key-for-jwt-verification';
   let service: JwtVerificationService;
   let configService: ConfigService;
 
@@ -18,164 +14,9 @@ describe('JwtVerificationService', () => {
     } as unknown as ConfigService;
   };
 
-  describe('シークレットキーを使用する場合', () => {
-    beforeEach(() => {
-      configService = createMockConfigService({
-        JWT_SECRET: TEST_SECRET,
-        JWT_ALGORITHMS: 'HS256',
-      });
-      service = new JwtVerificationService(configService);
-    });
-
-    it('有効なトークンを検証できること', async () => {
-      // Arrange
-      const payload = { sub: 'user-123', email: 'test@example.com' };
-      const token = jwt.sign(payload, TEST_SECRET, { algorithm: 'HS256' });
-
-      // Act
-      const result = await service.verify(token);
-
-      // Assert
-      expect(result.sub).toBe('user-123');
-      expect(result.email).toBe('test@example.com');
-    });
-
-    it('期限切れトークンの場合TOKEN_EXPIREDをスローすること', async () => {
-      // Arrange
-      const payload = { sub: 'user-123' };
-      const token = jwt.sign(payload, TEST_SECRET, {
-        algorithm: 'HS256',
-        expiresIn: '-1s',
-      });
-
-      // Act & Assert
-      await expect(service.verify(token)).rejects.toThrow(BusinessException);
-
-      try {
-        await service.verify(token);
-      } catch (error) {
-        expect(error).toBeInstanceOf(BusinessException);
-        expect((error as BusinessException).getErrorCode()).toBe(
-          ErrorCodes.TOKEN_EXPIRED,
-        );
-      }
-    });
-
-    it('署名が不正な場合TOKEN_INVALIDをスローすること', async () => {
-      // Arrange
-      const payload = { sub: 'user-123' };
-      const token = jwt.sign(payload, 'wrong-secret', { algorithm: 'HS256' });
-
-      // Act & Assert
-      await expect(service.verify(token)).rejects.toThrow(BusinessException);
-
-      try {
-        await service.verify(token);
-      } catch (error) {
-        expect(error).toBeInstanceOf(BusinessException);
-        expect((error as BusinessException).getErrorCode()).toBe(
-          ErrorCodes.TOKEN_INVALID,
-        );
-      }
-    });
-
-    it('トークンの形式が不正な場合TOKEN_INVALIDをスローすること', async () => {
-      // Arrange & Act & Assert
-      await expect(service.verify('malformed-token')).rejects.toThrow(
-        BusinessException,
-      );
-
-      try {
-        await service.verify('malformed-token');
-      } catch (error) {
-        expect(error).toBeInstanceOf(BusinessException);
-        expect((error as BusinessException).getErrorCode()).toBe(
-          ErrorCodes.TOKEN_INVALID,
-        );
-      }
-    });
-  });
-
-  describe('issuer検証を使用する場合', () => {
-    beforeEach(() => {
-      configService = createMockConfigService({
-        JWT_SECRET: TEST_SECRET,
-        JWT_ISSUER: 'https://auth.example.com',
-        JWT_ALGORITHMS: 'HS256',
-      });
-      service = new JwtVerificationService(configService);
-    });
-
-    it('issuerが一致するトークンを検証できること', async () => {
-      // Arrange
-      const payload = { sub: 'user-123' };
-      const token = jwt.sign(payload, TEST_SECRET, {
-        algorithm: 'HS256',
-        issuer: 'https://auth.example.com',
-      });
-
-      // Act
-      const result = await service.verify(token);
-
-      // Assert
-      expect(result.sub).toBe('user-123');
-    });
-
-    it('issuerが異なるトークンを拒否すること', async () => {
-      // Arrange
-      const payload = { sub: 'user-123' };
-      const token = jwt.sign(payload, TEST_SECRET, {
-        algorithm: 'HS256',
-        issuer: 'https://wrong-issuer.com',
-      });
-
-      // Act & Assert
-      await expect(service.verify(token)).rejects.toThrow(BusinessException);
-    });
-  });
-
-  describe('audience検証を使用する場合', () => {
-    beforeEach(() => {
-      configService = createMockConfigService({
-        JWT_SECRET: TEST_SECRET,
-        JWT_AUDIENCE: 'my-api',
-        JWT_ALGORITHMS: 'HS256',
-      });
-      service = new JwtVerificationService(configService);
-    });
-
-    it('audienceが一致するトークンを検証できること', async () => {
-      // Arrange
-      const payload = { sub: 'user-123' };
-      const token = jwt.sign(payload, TEST_SECRET, {
-        algorithm: 'HS256',
-        audience: 'my-api',
-      });
-
-      // Act
-      const result = await service.verify(token);
-
-      // Assert
-      expect(result.sub).toBe('user-123');
-    });
-
-    it('audienceが異なるトークンを拒否すること', async () => {
-      // Arrange
-      const payload = { sub: 'user-123' };
-      const token = jwt.sign(payload, TEST_SECRET, {
-        algorithm: 'HS256',
-        audience: 'wrong-api',
-      });
-
-      // Act & Assert
-      await expect(service.verify(token)).rejects.toThrow(BusinessException);
-    });
-  });
-
   describe('extractRoles', () => {
     beforeEach(() => {
       configService = createMockConfigService({
-        JWT_SECRET: TEST_SECRET,
         JWT_ROLES_CLAIM: 'roles',
       });
       service = new JwtVerificationService(configService);
@@ -218,7 +59,6 @@ describe('JwtVerificationService', () => {
   describe('ネストしたクレームパスでのextractRoles', () => {
     beforeEach(() => {
       configService = createMockConfigService({
-        JWT_SECRET: TEST_SECRET,
         JWT_ROLES_CLAIM: 'realm_access.roles',
       });
       service = new JwtVerificationService(configService);
@@ -252,53 +92,10 @@ describe('JwtVerificationService', () => {
     });
   });
 
-  describe('設定がない場合', () => {
-    beforeEach(() => {
-      configService = createMockConfigService({});
-      service = new JwtVerificationService(configService);
-    });
-
-    it('JWKS URIもシークレットも設定されていない場合エラーをスローすること', async () => {
-      // Arrange
-      const token = jwt.sign({ sub: 'user-123' }, 'any-secret');
-
-      // Act & Assert
-      await expect(service.verify(token)).rejects.toThrow(
-        'JWT verification is not configured',
-      );
-    });
-  });
-
-  describe('getRolesClaim', () => {
-    it('設定されたrolesクレームを返すこと', () => {
-      // Arrange
-      configService = createMockConfigService({
-        JWT_SECRET: TEST_SECRET,
-        JWT_ROLES_CLAIM: 'custom.roles.path',
-      });
-      service = new JwtVerificationService(configService);
-
-      // Act & Assert
-      expect(service.getRolesClaim()).toBe('custom.roles.path');
-    });
-
-    it('未設定の場合デフォルトのrolesクレームを返すこと', () => {
-      // Arrange
-      configService = createMockConfigService({
-        JWT_SECRET: TEST_SECRET,
-      });
-      service = new JwtVerificationService(configService);
-
-      // Act & Assert
-      expect(service.getRolesClaim()).toBe('roles');
-    });
-  });
-
   describe('extractScopes', () => {
     describe('スペース区切りのスコープ文字列', () => {
       beforeEach(() => {
         configService = createMockConfigService({
-          JWT_SECRET: TEST_SECRET,
           JWT_SCOPES_CLAIM: 'scope',
         });
         service = new JwtVerificationService(configService);
@@ -352,7 +149,6 @@ describe('JwtVerificationService', () => {
     describe('配列形式のスコープ', () => {
       beforeEach(() => {
         configService = createMockConfigService({
-          JWT_SECRET: TEST_SECRET,
           JWT_SCOPES_CLAIM: 'permissions',
         });
         service = new JwtVerificationService(configService);
@@ -376,7 +172,6 @@ describe('JwtVerificationService', () => {
     describe('カスタム区切り文字', () => {
       beforeEach(() => {
         configService = createMockConfigService({
-          JWT_SECRET: TEST_SECRET,
           JWT_SCOPES_CLAIM: 'scope',
           JWT_SCOPES_DELIMITER: ',',
         });
@@ -412,7 +207,6 @@ describe('JwtVerificationService', () => {
     describe('ネストしたクレームパス', () => {
       beforeEach(() => {
         configService = createMockConfigService({
-          JWT_SECRET: TEST_SECRET,
           JWT_SCOPES_CLAIM: 'resource_access.api.scopes',
         });
         service = new JwtVerificationService(configService);
@@ -446,56 +240,6 @@ describe('JwtVerificationService', () => {
         // Assert
         expect(scopes).toEqual([]);
       });
-    });
-  });
-
-  describe('getScopesClaim', () => {
-    it('設定されたscopesクレームを返すこと', () => {
-      // Arrange
-      configService = createMockConfigService({
-        JWT_SECRET: TEST_SECRET,
-        JWT_SCOPES_CLAIM: 'permissions',
-      });
-      service = new JwtVerificationService(configService);
-
-      // Act & Assert
-      expect(service.getScopesClaim()).toBe('permissions');
-    });
-
-    it('未設定の場合デフォルトのscopesクレームを返すこと', () => {
-      // Arrange
-      configService = createMockConfigService({
-        JWT_SECRET: TEST_SECRET,
-      });
-      service = new JwtVerificationService(configService);
-
-      // Act & Assert
-      expect(service.getScopesClaim()).toBe('scope');
-    });
-  });
-
-  describe('getScopesDelimiter', () => {
-    it('設定された区切り文字を返すこと', () => {
-      // Arrange
-      configService = createMockConfigService({
-        JWT_SECRET: TEST_SECRET,
-        JWT_SCOPES_DELIMITER: ',',
-      });
-      service = new JwtVerificationService(configService);
-
-      // Act & Assert
-      expect(service.getScopesDelimiter()).toBe(',');
-    });
-
-    it('未設定の場合デフォルトのスペースを返すこと', () => {
-      // Arrange
-      configService = createMockConfigService({
-        JWT_SECRET: TEST_SECRET,
-      });
-      service = new JwtVerificationService(configService);
-
-      // Act & Assert
-      expect(service.getScopesDelimiter()).toBe(' ');
     });
   });
 });

@@ -7,6 +7,40 @@ import { JwtPayload } from '../interfaces';
 import { BusinessException } from '../../common/exceptions/business.exception';
 import { ErrorCodes } from '../../common/constants/error-codes.constant';
 
+/**
+ * スコープ認可ガード
+ *
+ * `@Scopes()` デコレーターで指定されたスコープを持つユーザーのみアクセスを許可する。
+ * スコープの検証はOR条件で行われ、ワイルドカードマッチングにも対応。
+ *
+ * ## ワイルドカードマッチング
+ * - `*`: すべてのスコープにマッチ
+ * - `prefix:*`: 指定されたプレフィックスで始まるすべてのスコープにマッチ
+ *   - 例: `admin:*` は `admin:read`, `admin:write`, `admin:delete` にマッチ
+ *
+ * ## 動作
+ * 1. `@Scopes()` メタデータから必要なスコープを取得
+ * 2. スコープが指定されていない場合はアクセスを許可
+ * 3. ユーザーのJWTペイロードからスコープを抽出
+ * 4. 必要なスコープのいずれかにマッチするかチェック（OR条件）
+ *
+ * ## エラーコード
+ * - `TOKEN_MISSING`: ユーザーが認証されていない
+ * - `INSUFFICIENT_SCOPE`: 必要なスコープを持っていない
+ *
+ * @example
+ * ```typescript
+ * // 単一スコープの指定
+ * @Scopes('read:users')
+ * @Get('users')
+ * listUsers() {}
+ *
+ * // 複数スコープの指定（OR条件）
+ * @Scopes('write:users', 'admin:*')
+ * @Post('users')
+ * createUser() {}
+ * ```
+ */
 @Injectable()
 export class ScopesGuard implements CanActivate {
   constructor(
@@ -14,6 +48,14 @@ export class ScopesGuard implements CanActivate {
     private readonly reflector: Reflector,
   ) {}
 
+  /**
+   * リクエストのスコープ認可を検証する
+   *
+   * @param context - 実行コンテキスト
+   * @returns スコープ検証成功時はtrue
+   * @throws {BusinessException} TOKEN_MISSING - ユーザーが認証されていない場合
+   * @throws {BusinessException} INSUFFICIENT_SCOPE - 必要なスコープを持っていない場合
+   */
   canActivate(context: ExecutionContext): boolean {
     const requiredScopes = this.reflector.getAllAndOverride<string[]>(
       SCOPES_KEY,
@@ -51,21 +93,46 @@ export class ScopesGuard implements CanActivate {
     return true;
   }
 
+  /**
+   * ユーザーのスコープが必要なスコープにマッチするかチェックする
+   *
+   * 以下のマッチングルールを適用:
+   * 1. 完全一致: `userScope === requiredScope`
+   * 2. 全権限ワイルドカード: ユーザーが `*` を持っている場合、すべてにマッチ
+   * 3. プレフィックスワイルドカード: `admin:*` は `admin:read`, `admin:write` などにマッチ
+   *
+   * @param userScopes - ユーザーが持つスコープの配列
+   * @param requiredScope - 必要なスコープ
+   * @returns マッチする場合はtrue
+   *
+   * @example
+   * ```typescript
+   * // 完全一致
+   * matchesScope(['read', 'write'], 'read'); // => true
+   *
+   * // 全権限ワイルドカード
+   * matchesScope(['*'], 'admin:delete'); // => true
+   *
+   * // プレフィックスワイルドカード
+   * matchesScope(['admin:*'], 'admin:read'); // => true
+   * matchesScope(['admin:*'], 'user:read'); // => false
+   * ```
+   */
   private matchesScope(userScopes: string[], requiredScope: string): boolean {
     return userScopes.some((userScope) => {
-      // Exact match
+      // 完全一致
       if (userScope === requiredScope) {
         return true;
       }
 
-      // Wildcard match: user has `*` which matches everything
+      // 全権限ワイルドカード: ユーザーが `*` を持っている場合、すべてにマッチ
       if (userScope === '*') {
         return true;
       }
 
-      // Wildcard match: user has `admin:*` which matches `admin:read`, `admin:write`, etc.
+      // プレフィックスワイルドカード: `admin:*` は `admin:read`, `admin:write` などにマッチ
       if (userScope.endsWith(':*')) {
-        const prefix = userScope.slice(0, -1); // Remove trailing `*`, keep `admin:`
+        const prefix = userScope.slice(0, -1); // 末尾の `*` を削除し、`admin:` を残す
         return requiredScope.startsWith(prefix);
       }
 

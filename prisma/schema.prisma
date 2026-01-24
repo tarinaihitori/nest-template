@@ -11,9 +11,36 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(nanoid(18))
-  email     String   @unique
-  name      String?
+  id            String          @id @default(nanoid(18))
+  email         String          @unique
+  password      String?
+  name          String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  allowedIps    UserAllowedIp[]
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  revokedAt DateTime?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+model UserAllowedIp {
+  id        String   @id @default(cuid())
+  userId    String
+  ipAddress String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ipAddress])
+  @@index([userId])
 }
