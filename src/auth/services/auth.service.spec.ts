@@ -44,6 +44,7 @@ describe('AuthService', () => {
         JWT_ACCESS_TOKEN_EXPIRATION: '15m',
         JWT_REFRESH_TOKEN_EXPIRATION: '7d',
         JWT_ISSUER: 'test-issuer',
+        PASSWORD_PEPPER: 'test-pepper',
       };
       return config[key];
     }),
@@ -97,7 +98,7 @@ describe('AuthService', () => {
       expect(result.user.email).toBe(signupDto.email);
       expect(result.tokens.accessToken).toBe('access-token');
       expect(mockUsersRepository.findByEmail).toHaveBeenCalledWith(signupDto.email);
-      expect(argon2.hash).toHaveBeenCalledWith(signupDto.password);
+      expect(argon2.hash).toHaveBeenCalledWith(signupDto.password + 'test-pepper');
     });
 
     it('メールアドレスが既に存在する場合はConflictExceptionをスローすること', async () => {
@@ -138,7 +139,7 @@ describe('AuthService', () => {
       // Assert
       expect(result.user.id).toBe('user-123');
       expect(result.tokens.accessToken).toBe('access-token');
-      expect(argon2.verify).toHaveBeenCalledWith('hashed-password', loginDto.password);
+      expect(argon2.verify).toHaveBeenCalledWith('hashed-password', loginDto.password + 'test-pepper');
     });
 
     it('ユーザーが存在しない場合はUnauthorizedExceptionをスローすること', async () => {

@@ -17,6 +17,7 @@ export class AuthService {
   private readonly accessTokenExpiration: string;
   private readonly refreshTokenExpiration: string;
   private readonly jwtIssuer: string;
+  private readonly passwordPepper: string;
 
   constructor(
     private readonly usersRepository: UsersRepository,
@@ -30,6 +31,8 @@ export class AuthService {
       this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION') || '7d';
     this.jwtIssuer =
       this.configService.get<string>('JWT_ISSUER') || 'nest-project';
+    this.passwordPepper =
+      this.configService.get<string>('PASSWORD_PEPPER') || '';
   }
 
   async signup(signupDto: SignupDto): Promise<AuthResponseDto> {
@@ -41,7 +44,7 @@ export class AuthService {
       });
     }
 
-    const hashedPassword = await argon2.hash(signupDto.password);
+    const hashedPassword = await argon2.hash(signupDto.password + this.passwordPepper);
 
     const user = await this.usersRepository.createWithPassword({
       email: signupDto.email,
@@ -73,7 +76,7 @@ export class AuthService {
       });
     }
 
-    const isPasswordValid = await argon2.verify(user.password, loginDto.password);
+    const isPasswordValid = await argon2.verify(user.password, loginDto.password + this.passwordPepper);
     if (!isPasswordValid) {
       throw new UnauthorizedException({
         code: ErrorCodes.INVALID_CREDENTIALS,
